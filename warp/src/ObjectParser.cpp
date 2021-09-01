@@ -39,8 +39,8 @@ using namespace solidity::yul;
 using namespace solidity::util;
 using namespace solidity::langutil;
 
-tuple<shared_ptr<Object>, string>
-warp::ObjectParser::parse(std::shared_ptr<Scanner> const& _scanner, bool _reuseScanner, std::string& ret)
+tuple<shared_ptr<Object>, string> warp::ObjectParser::parse(
+	std::shared_ptr<Scanner> const& _scanner, bool _reuseScanner, std::string& ret)
 {
 	m_recursionDepth = 0;
 	try
@@ -64,8 +64,9 @@ warp::ObjectParser::parse(std::shared_ptr<Scanner> const& _scanner, bool _reuseS
 			object = this->parseObject(nullptr, ret);
 		if (!_reuseScanner)
 			expectToken(Token::EOS);
-		object->debugData = make_shared<ObjectDebugData>(ObjectDebugData{m_sourceNameMapping});
-		return  tuple<shared_ptr<Object>, string>(object, this->m_cairo);
+		object->debugData
+			= make_shared<ObjectDebugData>(ObjectDebugData{m_sourceNameMapping});
+		return tuple<shared_ptr<Object>, string>(object, this->m_cairo);
 	}
 	catch (FatalError const&)
 	{
@@ -75,7 +76,8 @@ warp::ObjectParser::parse(std::shared_ptr<Scanner> const& _scanner, bool _reuseS
 	return tuple<shared_ptr<Object>, string>(nullptr, "");
 }
 
-shared_ptr<Object> warp::ObjectParser::parseObject(Object* _containingObject, std::string& _ret)
+shared_ptr<Object>
+warp::ObjectParser::parseObject(Object* _containingObject, std::string& _ret)
 {
 	RecursionGuard guard(*this);
 
@@ -100,7 +102,8 @@ shared_ptr<Object> warp::ObjectParser::parseObject(Object* _containingObject, st
 		else if (currentToken() == Token::Identifier && currentLiteral() == "data")
 			parseData(*ret);
 		else
-			fatalParserError(8143_error, "Expected keyword \"data\" or \"object\" or \"}\".");
+			fatalParserError(
+				8143_error, "Expected keyword \"data\" or \"object\" or \"}\".");
 	}
 	if (_containingObject)
 		addNamedSubObject(*_containingObject, ret->name, ret);
@@ -128,14 +131,16 @@ optional<SourceNameMap> warp::ObjectParser::tryParseSourceNameMapping() const
 	// FileName   := "(([^\"]|\.)*)"
 
 	// Matches some "@use-src TEXT".
-	static std::regex const lineRE
-		= std::regex("(^|\\s)@use-src\\b", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+	static std::regex const lineRE = std::regex(
+		"(^|\\s)@use-src\\b",
+		std::regex_constants::ECMAScript | std::regex_constants::optimize);
 	std::smatch sm;
 	if (!std::regex_search(m_scanner->currentCommentLiteral(), sm, lineRE))
 		return nullopt;
 
 	solAssert(sm.size() == 2, "");
-	auto text = m_scanner->currentCommentLiteral().substr(static_cast<size_t>(sm.position() + sm.length()));
+	auto text = m_scanner->currentCommentLiteral().substr(
+		static_cast<size_t>(sm.position() + sm.length()));
 	CharStream charStream(text, "");
 	Scanner scanner(charStream);
 	if (scanner.currentToken() == Token::EOS)
@@ -166,7 +171,8 @@ optional<SourceNameMap> warp::ObjectParser::tryParseSourceNameMapping() const
 	m_errorReporter.syntaxError(
 		9804_error,
 		m_scanner->currentCommentLocation(),
-		"Error parsing arguments to @use-src. Expected: <number> \":\" \"<filename>\", ...");
+		"Error parsing arguments to @use-src. Expected: <number> \":\" \"<filename>\", "
+		"...");
 	return nullopt;
 }
 
@@ -182,7 +188,9 @@ tuple<shared_ptr<Block>, string> warp::ObjectParser::parseBlock(std::string& ret
 
 void warp::ObjectParser::parseData(Object& _containingObject)
 {
-	yulAssert(currentToken() == Token::Identifier && currentLiteral() == "data", "parseData called on wrong input.");
+	yulAssert(
+		currentToken() == Token::Identifier && currentLiteral() == "data",
+		"parseData called on wrong input.");
 	advance();
 
 	YulString name = parseUniqueName(&_containingObject);
@@ -191,7 +199,8 @@ void warp::ObjectParser::parseData(Object& _containingObject)
 		expectToken(Token::HexStringLiteral, false);
 	else
 		expectToken(Token::StringLiteral, false);
-	addNamedSubObject(_containingObject, name, make_shared<Data>(name, asBytes(currentLiteral())));
+	addNamedSubObject(
+		_containingObject, name, make_shared<Data>(name, asBytes(currentLiteral())));
 	advance();
 }
 
@@ -202,14 +211,20 @@ YulString warp::ObjectParser::parseUniqueName(Object const* _containingObject)
 	if (name.empty())
 		parserError(3287_error, "Object name cannot be empty.");
 	else if (_containingObject && _containingObject->name == name)
-		parserError(8311_error, "Object name cannot be the same as the name of the containing object.");
+		parserError(
+			8311_error,
+			"Object name cannot be the same as the name of the containing object.");
 	else if (_containingObject && _containingObject->subIndexByName.count(name))
-		parserError(8794_error, "Object name \"" + name.str() + "\" already exists inside the containing object.");
+		parserError(
+			8794_error,
+			"Object name \"" + name.str()
+				+ "\" already exists inside the containing object.");
 	advance();
 	return name;
 }
 
-void warp::ObjectParser::addNamedSubObject(Object& _container, YulString _name, shared_ptr<ObjectNode> _subObject)
+void warp::ObjectParser::addNamedSubObject(
+	Object& _container, YulString _name, shared_ptr<ObjectNode> _subObject)
 {
 	_container.subIndexByName[_name] = _container.subObjects.size();
 	_container.subObjects.emplace_back(std::move(_subObject));

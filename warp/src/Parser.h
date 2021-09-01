@@ -8,11 +8,11 @@
 #pragma once
 
 
-#include <liblangutil/Scanner.h>
-#include <liblangutil/EVMVersion.h>
-#include <libyul/backends/evm/EVMDialect.h>
-#include <libyul/AssemblyStack.h>
 #include "ObjectParser.h"
+#include <liblangutil/EVMVersion.h>
+#include <liblangutil/Scanner.h>
+#include <libyul/AssemblyStack.h>
+#include <libyul/backends/evm/EVMDialect.h>
 
 #include <memory>
 #include <vector>
@@ -24,17 +24,14 @@ namespace warp
 {
 string parseAndAnalyze(std::string const& _sourceName, std::string const& _source)
 {
-    langutil::ErrorList _errorList = langutil::ErrorList{};
-    langutil::ErrorReporter _errorReporter = langutil::ErrorReporter(_errorList);
-    langutil::EVMVersion _version = langutil::EVMVersion().london();
-    auto const& _language = yul::AssemblyStack::Language::Yul;
-    auto const& _dialect = yul::EVMDialectTyped::instance(_version);
+	langutil::EVMVersion _version = langutil::EVMVersion().london();
 	auto _charStream = make_unique<langutil::CharStream>(_source, _sourceName);
-	std::shared_ptr<langutil::Scanner> scanner = make_shared<langutil::Scanner>(*_charStream);
-    std::string retStr;
-    std::shared_ptr<yul::Object> _parserResult;
+	std::shared_ptr<langutil::Scanner> scanner
+		= make_shared<langutil::Scanner>(*_charStream);
+	std::string retStr;
+	std::shared_ptr<yul::Object> _parserResult;
 	std::tie(_parserResult, retStr) = warp::ObjectParser().parse(scanner, false, retStr);
-    return retStr;
+	return retStr;
 }
 
 } // end namespace warp

@@ -25,7 +25,7 @@ string slurpFile(string_view path)
 {
 	constexpr size_t BUF_SIZE = 4096;
 
-	string	 result;
+	string result;
 	ifstream is{path.data()};
 	is.exceptions(ifstream::badbit);
 	string buf(BUF_SIZE, '\0');
@@ -46,24 +46,26 @@ int main(int argc, char* argv[])
 
 	string contractPath = argv[1];
 
-	langutil::ErrorList		errors;
+	langutil::ErrorList errors;
 	langutil::ErrorReporter errorReporter{errors};
-	frontend::Parser		parser{errorReporter, langutil::EVMVersion()};
+	frontend::Parser parser{errorReporter, langutil::EVMVersion()};
 
-	string		   contractContents = slurpFile(contractPath);
-	string const&  yulContract = slurpFile("/home/greg/dev/warp-cpp/AsmParser/warp/loops.yul");
-	string const&  sourceName = "loops.yul";
+	string contractContents = slurpFile(contractPath);
+	langutil::CharStream charStream{contractContents, contractPath};
+	auto sourceUnit = parser.parse(charStream);
+
+	string const& yulContract
+		= slurpFile("/home/greg/dev/warp-cpp/AsmParser/warp/loops.yul");
+	string const& sourceName = "loops.yul";
 	vector<string> lines = splitStr(yulContract);
 	vector<string> dep = getRuntimeYul(lines);
-	string		   ret = warp::parseAndAnalyze(sourceName, yulContract);
-	cout << ret << endl;
+	string ret = warp::parseAndAnalyze(sourceName, yulContract);
 	ofstream gen_cairo;
 	gen_cairo.open("gen.cairo");
+
 	gen_cairo << ret << endl;
 	gen_cairo.close();
 	system("cairo-format -i gen.cairo");
 
-	langutil::CharStream charStream{contractContents, contractPath};
-	auto				 sourceUnit = parser.parse(charStream);
 	return 0;
 }

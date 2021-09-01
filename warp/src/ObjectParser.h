@@ -21,11 +21,11 @@
 
 #pragma once
 
+#include <liblangutil/EVMVersion.h>
 #include <libyul/Dialect.h>
 #include <libyul/Object.h>
-#include <liblangutil/EVMVersion.h>
-#include <libyul/backends/evm/EVMDialect.h>
 #include <libyul/YulString.h>
+#include <libyul/backends/evm/EVMDialect.h>
 
 #include <liblangutil/ErrorReporter.h>
 #include <liblangutil/ParserBase.h>
@@ -50,34 +50,40 @@ class ObjectParser: public langutil::ParserBase
 {
 public:
 	langutil::ErrorList _errList = langutil::ErrorList{};
-	langutil::ErrorReporter errRep = langutil::ErrorReporter(_errList); 
+	langutil::ErrorReporter errRep = langutil::ErrorReporter(_errList);
 	langutil::EVMVersion _ver = langutil::EVMVersion().london();
 	yul::EVMDialectTyped _dialect = yul::EVMDialectTyped(_ver, true);
 	std::string m_cairo;
-	explicit ObjectParser()
-		: ParserBase(errRep), m_dialect(_dialect)
-	{
-	}
+	explicit ObjectParser(): ParserBase(errRep), m_dialect(_dialect) {}
 
 	/// Parses a Yul object.
 	/// Falls back to code-only parsing if the source starts with `{`.
 	/// @param _reuseScanner if true, do check for end of input after the last `}`.
 	/// @returns an empty shared pointer on error.
-	std::tuple<std::shared_ptr<yul::Object>, std::string>
-	parse(std::shared_ptr<langutil::Scanner> const& _scanner, bool _reuseScanner, std::string& ret);
+	std::tuple<std::shared_ptr<yul::Object>, std::string> parse(
+		std::shared_ptr<langutil::Scanner> const& _scanner,
+		bool _reuseScanner,
+		std::string& ret);
 
-	std::optional<yul::SourceNameMap> const& sourceNameMapping() const noexcept { return m_sourceNameMapping; }
+	std::optional<yul::SourceNameMap> const& sourceNameMapping() const noexcept
+	{
+		return m_sourceNameMapping;
+	}
 
 private:
 	std::optional<yul::SourceNameMap> tryParseSourceNameMapping() const;
-	std::shared_ptr<yul::Object> parseObject(yul::Object* _containingObject, std::string& ret);
+	std::shared_ptr<yul::Object>
+	parseObject(yul::Object* _containingObject, std::string& ret);
 	std::tuple<std::shared_ptr<yul::Block>, std::string> parseCode(std::string& ret);
 	std::tuple<std::shared_ptr<yul::Block>, std::string> parseBlock(std::string& ret);
 	void parseData(yul::Object& _containingObject);
 
 	/// Tries to parse a name that is non-empty and unique inside the containing object.
 	yul::YulString parseUniqueName(yul::Object const* _containingObject);
-	void addNamedSubObject(yul::Object& _container, yul::YulString _name, std::shared_ptr<yul::ObjectNode> _subObject);
+	void addNamedSubObject(
+		yul::Object& _container,
+		yul::YulString _name,
+		std::shared_ptr<yul::ObjectNode> _subObject);
 
 	yul::Dialect const& m_dialect;
 

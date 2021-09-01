@@ -79,14 +79,13 @@ public:
 		Comments,
 	};
 
-	explicit Parser(langutil::ErrorReporter&						  _errorReporter,
-					yul::Dialect const&								  _dialect,
-					std::optional<solidity::langutil::SourceLocation> _locationOverride
-					= {})
-		: ParserBase(_errorReporter),
-		  m_dialect(_dialect), m_locationOverride{_locationOverride
-													  ? *_locationOverride
-													  : langutil::SourceLocation{}},
+	explicit Parser(
+		langutil::ErrorReporter& _errorReporter,
+		yul::Dialect const& _dialect,
+		std::optional<solidity::langutil::SourceLocation> _locationOverride = {})
+		: ParserBase(_errorReporter), m_dialect(_dialect),
+		  m_locationOverride{
+			  _locationOverride ? *_locationOverride : langutil::SourceLocation{}},
 		  m_debugDataOverride{}, m_useSourceLocationFrom{
 									 _locationOverride
 										 ? UseSourceLocationFrom::LocationOverride
@@ -97,26 +96,26 @@ public:
 	/// Constructs a Yul parser that is using the source locations
 	/// from the comments (via @src).
 	explicit Parser(
-		langutil::ErrorReporter&										 _errorReporter,
-		yul::Dialect const&												 _dialect,
+		langutil::ErrorReporter& _errorReporter,
+		yul::Dialect const& _dialect,
 		std::optional<std::map<unsigned, std::shared_ptr<string const>>> _sourceNames)
 		: ParserBase(_errorReporter),
 		  m_dialect(_dialect), m_sourceNames{std::move(_sourceNames)},
 		  m_debugDataOverride{yul::DebugData::create()},
-		  m_useSourceLocationFrom{m_sourceNames.has_value()
-									  ? UseSourceLocationFrom::Comments
-									  : UseSourceLocationFrom::Scanner}
+		  m_useSourceLocationFrom{
+			  m_sourceNames.has_value() ? UseSourceLocationFrom::Comments
+										: UseSourceLocationFrom::Scanner}
 	{
 	}
-	string				  generateCairoFuncSigRetVars(const yul::TypedNameList& _retVars);
-	string				  generateCairoFuncRetVars(const yul::TypedNameList& _retVars);
+	string generateCairoFuncSigRetVars(const yul::TypedNameList& _retVars);
+	string generateCairoFuncRetVars(const yul::TypedNameList& _retVars);
 	tuple<string, string> generateCairoFuncArgs(const yul::TypedNameList& _params);
-	string				  generateCairoFuncDef(const yul::FunctionDefinition& _funcDef);
-	string				  generateCairoExpression(const yul::Expression&		  _expr,
-												  const yul::VariableDeclaration& _varDecl);
-	string				  generateCairoExpression(yul::Expression& _expr);
-	string				  generateCarioAssigment(const yul::Assignment& _assign);
-	string				  generateCairoFuncCall(const yul::FunctionCall& _func);
+	string generateCairoFuncDef(const yul::FunctionDefinition& _funcDef);
+	string generateCairoExpression(
+		const yul::Expression& _expr, const yul::VariableDeclaration& _varDecl);
+	string generateCairoExpression(yul::Expression& _expr);
+	string generateCarioAssigment(const yul::Assignment& _assign);
+	string generateCairoFuncCall(const yul::FunctionCall& _func);
 
 	/// Parses an inline assembly block starting with `{` and ending with `}`.
 	/// @returns an empty shared pointer on error.
@@ -155,32 +154,32 @@ protected:
 	vector<string> m_loopAccessibleVars;
 	vector<string> m_loopAcessedUpperScopeVars;
 	vector<string> m_loopFuncArgs;
-	LoopData	   m_currentLoopData;
-	string		   m_currFunName;
-	string		   m_CurrentFunArgs;
-	string		   m_CurrentFunArgsForCall;
-	yul::Block	   parseBlock(string& ret, const string& _funName = "");
-	string		   parseLoopBlock(string& ret, const string& _funName);
+	LoopData m_currentLoopData;
+	string m_currFunName;
+	string m_CurrentFunArgs;
+	string m_CurrentFunArgsForCall;
+	yul::Block parseBlock(string& ret, const string& _funName = "");
+	string parseLoopBlock(string& ret, const string& _funName);
 	yul::Statement parseStatement(string& ret, const string& _funName);
-	string		   parseLoopStatement(string& _ret, const string& _funcName);
-	string		   parseForLoop(string& ret, const string& _funcName);
-	void 		   stringReplace(string& str, const string& find, const string& replace);
-	yul::Case	   parseCase(string& ret, const string& check);
-	string		   parseLoopCase();
-	void		   addLoopAccessibleVars(const yul::VariableDeclaration& _vars);
-	void		   addLoopAccessedVars(const yul::VariableDeclaration& _vars);
-	string		   generateCairoLoopFunc(const std::string& _funcName);
-	void		   getAuxLoopData(const std::string& _funcName);
+	string parseLoopStatement(string& _ret, const string& _funcName);
+	string parseForLoop(string& ret, const string& _funcName);
+	void stringReplace(string& str, const string& find, const string& replace);
+	yul::Case parseCase(string& ret, const string& check);
+	string parseLoopCase();
+	void addLoopAccessibleVars(const yul::VariableDeclaration& _vars);
+	void addLoopAccessedVars(const yul::VariableDeclaration& _vars);
+	string generateCairoLoopFunc(const std::string& _funcName);
+	void getAuxLoopData(const std::string& _funcName);
 	/// Parses a functional expression that has to push exactly one stack element
 	yul::Expression parseExpression();
 	/// Parses an elementary operation, i.e. a literal, identifier, instruction or
 	/// builtin functian call (only the name).
 	std::variant<yul::Literal, yul::Identifier> parseLiteralOrIdentifier();
-	yul::VariableDeclaration					parseVariableDeclaration();
-	yul::FunctionDefinition						parseFunctionDefinition(string& ret);
+	yul::VariableDeclaration parseVariableDeclaration();
+	yul::FunctionDefinition parseFunctionDefinition(string& ret);
 	yul::FunctionCall parseCall(std::variant<yul::Literal, yul::Identifier>&& _initialOp);
-	yul::TypedName	  parseTypedName();
-	yul::YulString	  expectAsmIdentifier();
+	yul::TypedName parseTypedName();
+	yul::YulString expectAsmIdentifier();
 
 	/// Reports an error if we are currently not inside the body part of a for
 	/// loop.
@@ -192,11 +191,11 @@ private:
 	yul::Dialect const& m_dialect;
 
 	std::optional<std::map<unsigned, std::shared_ptr<std::string const>>> m_sourceNames;
-	langutil::SourceLocation			  m_locationOverride;
+	langutil::SourceLocation m_locationOverride;
 	std::shared_ptr<yul::DebugData const> m_debugDataOverride;
 	UseSourceLocationFrom m_useSourceLocationFrom = UseSourceLocationFrom::Scanner;
-	ForLoopComponent	  m_currentForLoopComponent = ForLoopComponent::None;
-	bool				  m_insideFunction = false;
+	ForLoopComponent m_currentForLoopComponent = ForLoopComponent::None;
+	bool m_insideFunction = false;
 };
 
 } // namespace warp

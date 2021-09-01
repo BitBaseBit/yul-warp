@@ -51,9 +51,9 @@ const uint128 MAX_128 = ~uint128(0);
 
 namespace warp
 {
-[[nodiscard]] shared_ptr<DebugData const>
-updateLocationEndFrom(shared_ptr<DebugData const> const& _debugData,
-					  langutil::SourceLocation const&	 _location)
+[[nodiscard]] shared_ptr<DebugData const> updateLocationEndFrom(
+	shared_ptr<DebugData const> const& _debugData,
+	langutil::SourceLocation const& _location)
 {
 	SourceLocation updatedLocation = _debugData->location;
 	updatedLocation.end = _location.end;
@@ -74,10 +74,10 @@ optional<int> toInt(string const& _value)
 
 string toUint256(string _literal)
 {
-	uint256	   argVal = from_string<uint256>(_literal.c_str());
+	uint256 argVal = from_string<uint256>(_literal.c_str());
 	div_result res = udivrem(argVal, MAX_128);
-	auto	   low = to_string(res.rem) + ", ";
-	auto	   high = to_string(res.quot) + ")";
+	auto low = to_string(res.rem) + ", ";
+	auto high = to_string(res.quot) + ")";
 	return "Uint256(" + low + high;
 }
 
@@ -101,7 +101,7 @@ unique_ptr<Block> warp::Parser::parse(CharStream& _charStream, string& ret)
 {
 	m_scanner = make_shared<Scanner>(_charStream);
 	unique_ptr<Block> block;
-	string			  cairo;
+	string cairo;
 	std::tie(block, cairo) = parseInline(m_scanner, ret);
 	expectToken(Token::EOS);
 	return block;
@@ -120,13 +120,15 @@ warp::Parser::parseInline(std::shared_ptr<Scanner> const& _scanner, string& ret)
 		m_scanner = _scanner;
 		if (m_sourceNames)
 			fetchSourceLocationFromComment();
-		return tuple<unique_ptr<Block>, string>(make_unique<Block>(parseBlock(ret)),
-												this->m_cairo_str);
+		return tuple<
+			unique_ptr<Block>,
+			string>(make_unique<Block>(parseBlock(ret)), this->m_cairo_str);
 	}
 	catch (FatalError const&)
 	{
-		yulAssert(!m_errorReporter.errors().empty(),
-				  "Fatal error detected, but no error is reported.");
+		yulAssert(
+			!m_errorReporter.errors().empty(),
+			"Fatal error detected, but no error is reported.");
 	}
 	return tuple<unique_ptr<Block>, string>(nullptr, "");
 }
@@ -139,8 +141,7 @@ void Parser::fetchSourceLocationFromComment()
 
 	static regex const lineRE = std::regex(
 		R"~~~((^|\s*)@src\s+(-1|\d+):(-1|\d+):(-1|\d+)(\s+|$))~~~",
-		std::regex_constants::ECMAScript | std::regex_constants::optimize
-	);
+		std::regex_constants::ECMAScript | std::regex_constants::optimize);
 
 	string const text = m_scanner->currentCommentLiteral();
 	auto from = sregex_iterator(text.begin(), text.end(), lineRE);
@@ -157,16 +158,27 @@ void Parser::fetchSourceLocationFromComment()
 		auto const commentLocation = m_scanner->currentCommentLocation();
 		m_debugDataOverride = DebugData::create();
 		if (!sourceIndex || !start || !end)
-			m_errorReporter.syntaxError(6367_error, commentLocation, "Invalid value in source location mapping. Could not parse location specification.");
+			m_errorReporter.syntaxError(
+				6367_error,
+				commentLocation,
+				"Invalid value in source location mapping. Could not parse location "
+				"specification.");
 		else if (sourceIndex == -1)
-			m_debugDataOverride = DebugData::create(SourceLocation{*start, *end, nullptr});
-		else if (!(sourceIndex >= 0 && m_sourceNames->count(static_cast<unsigned>(*sourceIndex))))
-			m_errorReporter.syntaxError(2674_error, commentLocation, "Invalid source mapping. Source index not defined via @use-src.");
+			m_debugDataOverride
+				= DebugData::create(SourceLocation{*start, *end, nullptr});
+		else if (!(sourceIndex >= 0
+				   && m_sourceNames->count(static_cast<unsigned>(*sourceIndex))))
+			m_errorReporter.syntaxError(
+				2674_error,
+				commentLocation,
+				"Invalid source mapping. Source index not defined via @use-src.");
 		else
 		{
-			shared_ptr<string const> sourceName = m_sourceNames->at(static_cast<unsigned>(*sourceIndex));
+			shared_ptr<string const> sourceName
+				= m_sourceNames->at(static_cast<unsigned>(*sourceIndex));
 			solAssert(sourceName, "");
-			m_debugDataOverride = DebugData::create(SourceLocation{*start, *end, move(sourceName)});
+			m_debugDataOverride
+				= DebugData::create(SourceLocation{*start, *end, move(sourceName)});
 		}
 	}
 }
@@ -183,7 +195,7 @@ langutil::Token Parser::advance()
 Block warp::Parser::parseBlock(string& ret, const string& _funName)
 {
 	RecursionGuard recursionGuard(*this);
-	Block		   block = createWithLocation<Block>();
+	Block block = createWithLocation<Block>();
 	expectToken(Token::LBrace);
 	while (currentToken() != Token::RBrace)
 		block.statements.emplace_back(this->parseStatement(ret, _funName));
@@ -197,8 +209,8 @@ Block warp::Parser::parseBlock(string& ret, const string& _funName)
 string warp::Parser::parseLoopBlock(string& ret, const string& _funName)
 {
 	RecursionGuard recursionGuard(*this);
-	Block		   block = createWithLocation<Block>();
-	string		   cairo_str;
+	Block block = createWithLocation<Block>();
+	string cairo_str;
 	expectToken(Token::LBrace);
 	while (currentToken() != Token::RBrace)
 		cairo_str += this->parseLoopStatement(ret, _funName);
@@ -210,10 +222,10 @@ string warp::Parser::parseLoopBlock(string& ret, const string& _funName)
 
 string warp::Parser::generateCairoFuncCall(const yul::FunctionCall& _func)
 {
-	string		   fName = _func.functionName.name.str();
-	string		   cairo_str = fName + "(";
+	string fName = _func.functionName.name.str();
+	string cairo_str = fName + "(";
 	vector<string> args_cairo;
-	auto		   args = _func.arguments;
+	auto args = _func.arguments;
 	if (args.empty())
 	{
 		return cairo_str + ")";
@@ -239,12 +251,12 @@ string warp::Parser::generateCairoFuncCall(const yul::FunctionCall& _func)
 	return string(cairo_str.begin(), cairo_str.end() - 2) + ")";
 }
 
-string warp::Parser::generateCairoExpression(const yul::Expression&			 _expr,
-											 const yul::VariableDeclaration& _varDecl)
+string warp::Parser::generateCairoExpression(
+	const yul::Expression& _expr, const yul::VariableDeclaration& _varDecl)
 {
 	string _cairo_str_lhs = "let (";
 	string _cairo_str_rhs;
-	auto   numVarsLhs = _varDecl.variables.size();
+	auto numVarsLhs = _varDecl.variables.size();
 	if (numVarsLhs == 1)
 	{
 		_cairo_str_lhs
@@ -254,7 +266,7 @@ string warp::Parser::generateCairoExpression(const yul::Expression&			 _expr,
 	{
 		for (auto var: _varDecl.variables)
 		{
-			auto   v = *var.debugData;
+			auto v = *var.debugData;
 			string name = var.name.str();
 			_cairo_str_lhs += "local " + name + " : Uint256, ";
 		}
@@ -332,8 +344,9 @@ warp::Parser::generateCairoFuncArgs(const yul::TypedNameList& _params)
 			cairo_str += param.name.str() + " : Uint256, ";
 			this->m_CurrentFunArgsForCall += param.name.str() + ", ";
 		}
-		return tuple<string, string>(string(cairo_str.begin(), cairo_str.end() - 2) + ")",
-									 cairo_str);
+		return tuple<
+			string,
+			string>(string(cairo_str.begin(), cairo_str.end() - 2) + ")", cairo_str);
 	}
 }
 
@@ -376,7 +389,7 @@ string warp::Parser::generateCairoFuncRetVars(const yul::TypedNameList& _retVars
 
 string warp::Parser::generateCairoFuncDef(const yul::FunctionDefinition& _funcDef)
 {
-	auto   _funcName = _funcDef.name.str();
+	auto _funcName = _funcDef.name.str();
 	string args;
 	string loopArgs;
 	string cairo_str = "func " + _funcName
@@ -449,8 +462,8 @@ Statement warp::Parser::parseStatement(string& _ret, const string& _funcName)
 		_if.body = parseBlock(_ret);
 		this->m_cairo_str += "end\n";
 		if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-			_if.debugData
-				= warp::updateLocationEndFrom(_if.debugData, _if.body.debugData->location);
+			_if.debugData = warp::
+				updateLocationEndFrom(_if.debugData, _if.body.debugData->location);
 		return Statement{move(_if)};
 	}
 	case Token::Switch:
@@ -468,9 +481,8 @@ Statement warp::Parser::parseStatement(string& _ret, const string& _funcName)
 			_switch.cases.emplace_back(parseCase(_ret, ""));
 		}
 		if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-			_switch.debugData
-				= warp::updateLocationEndFrom(_switch.debugData,
-										_switch.cases.back().body.debugData->location);
+			_switch.debugData = warp::updateLocationEndFrom(
+				_switch.debugData, _switch.cases.back().body.debugData->location);
 		this->m_cairo_str += "end\n";
 		return Statement{move(_switch)};
 	}
@@ -497,10 +509,10 @@ Statement warp::Parser::parseStatement(string& _ret, const string& _funcName)
 	{
 		Statement stmt{createWithLocation<Leave>()};
 		if (!m_insideFunction)
-			m_errorReporter
-				.syntaxError(8149_error,
-							 currentLocation(),
-							 "Keyword \"leave\" can only be used inside a function.");
+			m_errorReporter.syntaxError(
+				8149_error,
+				currentLocation(),
+				"Keyword \"leave\" can only be used inside a function.");
 		advance();
 		return stmt;
 	}
@@ -533,19 +545,20 @@ Statement warp::Parser::parseStatement(string& _ret, const string& _funcName)
 			{
 				auto const token = currentToken() == Token::Comma ? "," : ":=";
 
-				fatalParserError(2856_error,
-								 string("Variable name must precede \"") + token + "\""
-									 + (currentToken() == Token::Comma
-											? " in multiple assignment."
-											: " in assignment."));
+				fatalParserError(
+					2856_error,
+					string("Variable name must precede \"") + token + "\""
+						+ (currentToken() == Token::Comma ? " in multiple assignment."
+														  : " in assignment."));
 			}
 
 			auto const& identifier = std::get<Identifier>(elementary);
 
 			if (m_dialect.builtin(identifier.name))
-				fatalParserError(6272_error,
-								 "Cannot assign to builtin function \""
-									 + identifier.name.str() + "\".");
+				fatalParserError(
+					6272_error,
+					"Cannot assign to builtin function \"" + identifier.name.str()
+						+ "\".");
 
 			assignment.variableNames.emplace_back(identifier);
 
@@ -561,8 +574,8 @@ Statement warp::Parser::parseStatement(string& _ret, const string& _funcName)
 
 		assignment.value = make_unique<Expression>(parseExpression());
 		if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-			assignment.debugData = warp::updateLocationEndFrom(assignment.debugData,
-														 locationOf(*assignment.value));
+			assignment.debugData = warp::updateLocationEndFrom(
+				assignment.debugData, locationOf(*assignment.value));
 
 		return Statement{move(assignment)};
 	}
@@ -582,6 +595,7 @@ void warp::Parser::addLoopAccessibleVars(const VariableDeclaration& _vars)
 		this->m_loopAccessibleVars.emplace_back(var.name.str());
 	}
 }
+
 void warp::Parser::addLoopAccessedVars(const VariableDeclaration& _vars)
 {
 	for (auto var: _vars.variables)
@@ -597,8 +611,8 @@ string warp::Parser::parseLoopStatement(string& _ret, const string& _funcName)
 	{
 	case Token::Let:
 	{
-		auto   _varDecl = parseVariableDeclaration();
-		auto   expr = *_varDecl.value;
+		auto _varDecl = parseVariableDeclaration();
+		auto expr = *_varDecl.value;
 		string cairo_str = this->generateCairoExpression(expr, _varDecl) + "\n";
 		return cairo_str;
 	}
@@ -611,7 +625,7 @@ string warp::Parser::parseLoopStatement(string& _ret, const string& _funcName)
 		return parseLoopBlock(_ret, _funcName);
 	case Token::If:
 	{
-		If	   _if = createWithLocation<If>();
+		If _if = createWithLocation<If>();
 		string cairo_str = "if ";
 		advance();
 		_if.condition = make_unique<Expression>(parseExpression());
@@ -635,9 +649,8 @@ string warp::Parser::parseLoopStatement(string& _ret, const string& _funcName)
 			cairo_str += this->parseLoopCase();
 		}
 		if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-			_switch.debugData
-				= warp::updateLocationEndFrom(_switch.debugData,
-										_switch.cases.back().body.debugData->location);
+			_switch.debugData = warp::updateLocationEndFrom(
+				_switch.debugData, _switch.cases.back().body.debugData->location);
 		cairo_str += "end\n";
 		return cairo_str;
 	}
@@ -663,10 +676,10 @@ string warp::Parser::parseLoopStatement(string& _ret, const string& _funcName)
 	{
 		Statement stmt{createWithLocation<Leave>()};
 		if (!m_insideFunction)
-			m_errorReporter
-				.syntaxError(8149_error,
-							 currentLocation(),
-							 "Keyword \"leave\" can only be used inside a function.");
+			m_errorReporter.syntaxError(
+				8149_error,
+				currentLocation(),
+				"Keyword \"leave\" can only be used inside a function.");
 		advance();
 		return "leave";
 	}
@@ -684,7 +697,7 @@ string warp::Parser::parseLoopStatement(string& _ret, const string& _funcName)
 	case Token::LParen:
 	{
 		Expression expr = parseCall(std::move(elementary));
-		string	   cairo_str = this->generateCairoExpression(expr) + "\n";
+		string cairo_str = this->generateCairoExpression(expr) + "\n";
 		return cairo_str;
 	}
 	case Token::Comma:
@@ -699,20 +712,20 @@ string warp::Parser::parseLoopStatement(string& _ret, const string& _funcName)
 			{
 				auto const token = currentToken() == Token::Comma ? "," : ":=";
 
-				fatalParserError(2856_error,
-								 std::string("Variable name must precede \"") + token
-									 + "\""
-									 + (currentToken() == Token::Comma
-											? " in multiple assignment."
-											: " in assignment."));
+				fatalParserError(
+					2856_error,
+					std::string("Variable name must precede \"") + token + "\""
+						+ (currentToken() == Token::Comma ? " in multiple assignment."
+														  : " in assignment."));
 			}
 
 			auto const& identifier = std::get<Identifier>(elementary);
 
 			if (m_dialect.builtin(identifier.name))
-				fatalParserError(6272_error,
-								 "Cannot assign to builtin function \""
-									 + identifier.name.str() + "\".");
+				fatalParserError(
+					6272_error,
+					"Cannot assign to builtin function \"" + identifier.name.str()
+						+ "\".");
 
 			assignment.variableNames.emplace_back(identifier);
 
@@ -728,8 +741,8 @@ string warp::Parser::parseLoopStatement(string& _ret, const string& _funcName)
 
 		assignment.value = make_unique<Expression>(parseExpression());
 		if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-			assignment.debugData = warp::updateLocationEndFrom(assignment.debugData,
-														 locationOf(*assignment.value));
+			assignment.debugData = warp::updateLocationEndFrom(
+				assignment.debugData, locationOf(*assignment.value));
 
 		string cairo_str = this->generateCarioAssigment(assignment) + "\n";
 		for (auto var: assignment.variableNames)
@@ -750,7 +763,7 @@ string warp::Parser::parseLoopStatement(string& _ret, const string& _funcName)
 Case Parser::parseCase(string& ret, const string& check)
 {
 	RecursionGuard recursionGuard(*this);
-	Case		   _case = createWithLocation<Case>();
+	Case _case = createWithLocation<Case>();
 	if (currentToken() == Token::Default)
 		advance();
 	else if (currentToken() == Token::Case)
@@ -765,16 +778,16 @@ Case Parser::parseCase(string& ret, const string& check)
 		yulAssert(false, "Case or default case expected.");
 	_case.body = parseBlock(ret);
 	if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-		_case.debugData
-			= warp::updateLocationEndFrom(_case.debugData, _case.body.debugData->location);
+		_case.debugData = warp::
+			updateLocationEndFrom(_case.debugData, _case.body.debugData->location);
 	return _case;
 }
 
 string warp::Parser::parseLoopCase()
 {
 	RecursionGuard recursionGuard(*this);
-	Case		   _case = createWithLocation<Case>();
-	string		   cairo_str;
+	Case _case = createWithLocation<Case>();
+	string cairo_str;
 	if (currentToken() == Token::Default)
 		advance();
 	else if (currentToken() == Token::Case)
@@ -789,8 +802,8 @@ string warp::Parser::parseLoopCase()
 		yulAssert(false, "Case or default case expected.");
 	cairo_str += parseLoopBlock(cairo_str, this->m_currFunName);
 	if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-		_case.debugData
-			= warp::updateLocationEndFrom(_case.debugData, _case.body.debugData->location);
+		_case.debugData = warp::
+			updateLocationEndFrom(_case.debugData, _case.body.debugData->location);
 	return cairo_str;
 }
 
@@ -842,10 +855,11 @@ void warp::Parser::stringReplace(string& str, const string& find, const string& 
 {
 	size_t index = 0;
 	size_t increment = replace.size();
-	while (true) {
+	while (true)
+	{
 		/* Locate the substring to replace. */
 		index = str.find(find, index);
-		if (index == std::string::npos) 
+		if (index == std::string::npos)
 			break;
 
 		/* Make the replacement. */
@@ -881,9 +895,10 @@ string warp::Parser::parseForLoop(string& ret, const string& _funcName)
 
 	m_currentForLoopComponent = outerForLoopComponent;
 	string break_replace = this->m_currentLoopData.returnStatement;
-	string continue_replace = this->m_currentLoopData.post + this->m_currentLoopData.recursiveCall + "\n";
-	this->stringReplace(cairo_loop,"break", break_replace);
-	this->stringReplace(cairo_loop,"continue", continue_replace);
+	string continue_replace
+		= this->m_currentLoopData.post + this->m_currentLoopData.recursiveCall + "\n";
+	this->stringReplace(cairo_loop, "break", break_replace);
+	this->stringReplace(cairo_loop, "continue", continue_replace);
 	return cairo_loop;
 }
 
@@ -892,21 +907,22 @@ Expression Parser::parseExpression()
 	RecursionGuard recursionGuard(*this);
 
 	variant<Literal, Identifier> operation = parseLiteralOrIdentifier();
-	return visit(GenericVisitor{[&](Identifier& _identifier) -> Expression
-								{
-									if (currentToken() == Token::LParen)
-										return parseCall(std::move(operation));
-									if (m_dialect.builtin(_identifier.name))
-										fatalParserError(7104_error,
-														 _identifier.debugData->location,
-														 "Builtin function \""
-															 + _identifier.name.str()
-															 + "\" must be called.");
-									return move(_identifier);
-								},
-								[&](Literal& _literal) -> Expression
-								{ return move(_literal); }},
-				 operation);
+	return visit(
+		GenericVisitor{
+			[&](Identifier& _identifier) -> Expression
+			{
+				if (currentToken() == Token::LParen)
+					return parseCall(std::move(operation));
+				if (m_dialect.builtin(_identifier.name))
+					fatalParserError(
+						7104_error,
+						_identifier.debugData->location,
+						"Builtin function \"" + _identifier.name.str()
+							+ "\" must be called.");
+				return move(_identifier);
+			},
+			[&](Literal& _literal) -> Expression { return move(_literal); }},
+		operation);
 }
 
 variant<Literal, Identifier> Parser::parseLiteralOrIdentifier()
@@ -946,11 +962,11 @@ variant<Literal, Identifier> Parser::parseLiteralOrIdentifier()
 			break;
 		}
 
-		Literal literal{createDebugData(),
-						kind,
-						YulString{currentLiteral()},
-						kind == LiteralKind::Boolean ? m_dialect.boolType
-													 : m_dialect.defaultType};
+		Literal literal{
+			createDebugData(),
+			kind,
+			YulString{currentLiteral()},
+			kind == LiteralKind::Boolean ? m_dialect.boolType : m_dialect.defaultType};
 		advance();
 		if (currentToken() == Token::Colon)
 		{
@@ -964,8 +980,8 @@ variant<Literal, Identifier> Parser::parseLiteralOrIdentifier()
 		return literal;
 	}
 	case Token::Illegal:
-		fatalParserError(1465_error,
-						 "Illegal token: " + to_string(m_scanner->currentError()));
+		fatalParserError(
+			1465_error, "Illegal token: " + to_string(m_scanner->currentError()));
 		break;
 	default:
 		fatalParserError(1856_error, "Literal or identifier expected.");
@@ -975,7 +991,7 @@ variant<Literal, Identifier> Parser::parseLiteralOrIdentifier()
 
 VariableDeclaration Parser::parseVariableDeclaration()
 {
-	RecursionGuard		recursionGuard(*this);
+	RecursionGuard recursionGuard(*this);
 	VariableDeclaration varDecl = createWithLocation<VariableDeclaration>();
 	expectToken(Token::Let);
 	while (true)
@@ -991,13 +1007,12 @@ VariableDeclaration Parser::parseVariableDeclaration()
 		expectToken(Token::AssemblyAssign);
 		varDecl.value = make_unique<Expression>(parseExpression());
 		if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-			varDecl.debugData
-				= warp::updateLocationEndFrom(varDecl.debugData, locationOf(*varDecl.value));
+			varDecl.debugData = warp::
+				updateLocationEndFrom(varDecl.debugData, locationOf(*varDecl.value));
 	}
 	else if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-		varDecl.debugData
-			= warp::updateLocationEndFrom(varDecl.debugData,
-									varDecl.variables.back().debugData->location);
+		varDecl.debugData = warp::updateLocationEndFrom(
+			varDecl.debugData, varDecl.variables.back().debugData->location);
 
 	return varDecl;
 }
@@ -1007,10 +1022,10 @@ FunctionDefinition Parser::parseFunctionDefinition(string& _ret)
 	RecursionGuard recursionGuard(*this);
 
 	if (m_currentForLoopComponent == ForLoopComponent::ForLoopPre)
-		m_errorReporter
-			.syntaxError(3441_error,
-						 currentLocation(),
-						 "Functions cannot be defined inside a for-loop init block.");
+		m_errorReporter.syntaxError(
+			3441_error,
+			currentLocation(),
+			"Functions cannot be defined inside a for-loop init block.");
 
 	ForLoopComponent outerForLoopComponent = m_currentForLoopComponent;
 	m_currentForLoopComponent = ForLoopComponent::None;
@@ -1047,8 +1062,8 @@ FunctionDefinition Parser::parseFunctionDefinition(string& _ret)
 	m_cairo_str += "end\n\n";
 	m_insideFunction = preInsideFunction;
 	if (m_useSourceLocationFrom == UseSourceLocationFrom::Scanner)
-		funDef.debugData
-			= warp::updateLocationEndFrom(funDef.debugData, funDef.body.debugData->location);
+		funDef.debugData = warp::
+			updateLocationEndFrom(funDef.debugData, funDef.body.debugData->location);
 
 	m_currentForLoopComponent = outerForLoopComponent;
 	return funDef;
@@ -1084,7 +1099,7 @@ FunctionCall Parser::parseCall(variant<Literal, Identifier>&& _initialOp)
 TypedName Parser::parseTypedName()
 {
 	RecursionGuard recursionGuard(*this);
-	TypedName	   typedName = createWithLocation<TypedName>();
+	TypedName typedName = createWithLocation<TypedName>();
 	typedName.name = expectAsmIdentifier();
 	if (currentToken() == Token::Colon)
 	{
@@ -1104,9 +1119,10 @@ YulString Parser::expectAsmIdentifier()
 {
 	YulString name{currentLiteral()};
 	if (currentToken() == Token::Identifier && m_dialect.builtin(name))
-		fatalParserError(5568_error,
-						 "Cannot use builtin function name \"" + name.str()
-							 + "\" as identifier name.");
+		fatalParserError(
+			5568_error,
+			"Cannot use builtin function name \"" + name.str()
+				+ "\" as identifier name.");
 	// NOTE: We keep the expectation here to ensure the correct source location
 	// for the error above.
 	expectToken(Token::Identifier);
@@ -1118,22 +1134,22 @@ void Parser::checkBreakContinuePosition(string const& _which)
 	switch (m_currentForLoopComponent)
 	{
 	case ForLoopComponent::None:
-		m_errorReporter.syntaxError(2592_error,
-									currentLocation(),
-									"Keyword \"" + _which
-										+ "\" needs to be inside a for-loop body.");
+		m_errorReporter.syntaxError(
+			2592_error,
+			currentLocation(),
+			"Keyword \"" + _which + "\" needs to be inside a for-loop body.");
 		break;
 	case ForLoopComponent::ForLoopPre:
-		m_errorReporter.syntaxError(9615_error,
-									currentLocation(),
-									"Keyword \"" + _which
-										+ "\" in for-loop init block is not allowed.");
+		m_errorReporter.syntaxError(
+			9615_error,
+			currentLocation(),
+			"Keyword \"" + _which + "\" in for-loop init block is not allowed.");
 		break;
 	case ForLoopComponent::ForLoopPost:
-		m_errorReporter.syntaxError(2461_error,
-									currentLocation(),
-									"Keyword \"" + _which
-										+ "\" in for-loop post block is not allowed.");
+		m_errorReporter.syntaxError(
+			2461_error,
+			currentLocation(),
+			"Keyword \"" + _which + "\" in for-loop post block is not allowed.");
 		break;
 	case ForLoopComponent::ForLoopBody:
 		break;
