@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+cd build
+cmake ..
+make -j20
+chmod +x ./check
+./check ../ERC20.sol

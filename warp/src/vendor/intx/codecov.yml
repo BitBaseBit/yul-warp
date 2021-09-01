@@ -1,0 +1,7 @@
+comment:
+  layout: "diff, flags, files"
+ignore:
+  - "test/benchmarks/*"
+  - "test/fuzzer/*"
+  - "test/integration/*"
+  - "test/utils/*"

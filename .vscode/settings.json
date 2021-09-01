@@ -1,0 +1,9 @@
+{
+    "C_Cpp.errorSquiggles": "Disabled",
+    "files.associations": {
+        "*.ipp": "cpp",
+        "regex": "cpp",
+        "*.tcc": "cpp",
+        "variant": "cpp"
+    }
+}
